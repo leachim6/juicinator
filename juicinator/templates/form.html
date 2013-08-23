@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+<style type="text/css">
+.idk {padding-top: 80px;}
+.spacer {padding-top:50px;}
+.info {background: #979797;}
+</style>
+<script type="text/javascript">
+$(document).ready(function() {
+  function updateinfo() {
+    var amount = $("#bottlesize").val();
+    if (amount == undefined || amount == "" || amount < 0) {
+      return;
+    }
+
+    var nicbase = $("#nicbase").val();
+    var nictarget = $("#nictarget").val();
+  
+    var nicml = Number(((nictarget / nicbase) * amount).toFixed(2));
+    var nicpc = Number(((nicml / amount) * 100).toFixed(2));
+    var nicpg = Number($("#nicpg").val());
+    var nicvg = Number($("#nicvg").val());
+
+    var existingpg = 0;
+    var existingvg = 0;
+    var existingml = 0;
+    
+    if (nicml != NaN && nicpc != NaN) {
+      $("span.nicml").html(nicml);
+      $("span.nicpc").html(nicpc + '%');
+      existingml += nicml;
+
+      if (nicpg != NaN) {
+        existingpg += nicml * (nicpg / 100);
+      }
+      if (nicvg != NaN) {
+        existingvg += nicml * (nicvg / 100);
+      }
+    }
+
+    var water = Number($("#miscadd").val());
+    if (water != NaN) {
+      var waterml = Number(((water / 100) * amount).toFixed(2));
+      existingml += waterml;
+    }
+  
+    $(".flavorinfo").remove();
+  
+    $(".flavor").each(function(index, group) {
+      var name = $(group).children("div").children("input.fname").val();
+      var pc = $(group).children("div").children("input.fpc").val();
+      var ml = Number((amount * (pc / 100)).toFixed(2));
+      $('<div class="row flavorinfo"><div class="col-lg-2"></div><div class="col-lg-2">' 
+        + name + '</div><div class="col-lg-2">' + ml + ' ml</div><div class="col-lg-2">'
+        + pc + ' %</div></div>').appendTo(".info");
+      existingml += ml;
+      var flavpg = Number($(group).children("div").children("input.fpg").val());
+      var flavvg = Number($(group).children("div").children("input.fvg").val());
+      if (flavpg != NaN) {
+        existingpg += ml * (flavpg / 100);
+      }
+      if (flavvg != NaN) {
+        existingvg += ml * (flavvg / 100);
+      }
+    });
+
+    var pg = Number($("#targetpg").val());
+    var vg = Number($("#targetvg").val());
+
+    if ((pg != 0 && !isNaN(pg)) || (vg != 0 && !isNaN(vg))) {
+      if (pg > 100 || ((pg + vg) > 100) || vg > 100) {
+        $("#pgvg").addClass("has-error");
+      } else {
+        pg = ((pg / 100) * amount) - existingpg;
+        vg = ((vg / 100) * amount) - existingvg;
+        var remainingml = amount - existingml;
+        if (pg != NaN) {
+          if (pg > remainingml) {
+            pg = remainingml;
+          }
+          $(".pg").html(Number(pg.toFixed(2)) + " ml");
+          pgpc = (pg / amount) * 100;
+          $(".pgpc").html(Number(pgpc.toFixed(2)) + "%");
+        }
+        if (vg != NaN) {
+          if (vg > remainingml) {
+            vg = remainingml;
+          }
+          $(".vg").html(Number(vg.toFixed(2)) + " ml");
+          vgpc = (vg / amount) * 100;
+          $(".vgpc").html(Number(vgpc.toFixed(2)) + "%");
+        }
+      }
+    }
+  } 
+
+  $("input").bind('change', function() {updateinfo();});
+  $("#addflavor").click(function() {
+    num = $(".flavor").length + 1;
+    $('<div class="form-group flavor">'
+    + '<label for="flavor' + num + '" class="col-lg-2 control-label">Flavor ' + num + '</label>'
+    + '<div class="col-lg-2">'
+    + '<input type="text" class="form-control fname" id="flavor' + num + '" placeholder="Flavor Name">'
+    + '</div>'
+    + '<div class="col-lg-2">'
+    + '<input type="number" class="form-control fpg" id="flavor' + num + 'pg" placeholder="pg %">'
+    + '</div>'
+    + '<div class="col-lg-2">'
+    + '<input type="number" class="form-control fvg" id="flavor' + num + 'vg" placeholder="vg %">'
+    + '</div>'
+    + '<div class="col-lg-2">'
+    + '<input type="number" class="form-control fpc" id="flavor' + num + 'pc" placeholder="mix %">'
+    + '</div>'
+    + '</div>').insertAfter('.flavor:last').bind('change', function() {updateinfo();});
+  });
+});
+
+</script>
+{% endblock extrahead %}
+
+{% block body %}
+<div class="idk">
+  <form class="form-horizontal" role="form">
+    <div class="form-group">
+      <label for="nicbase" class="col-lg-2 control-label">Nic Base</label>
+      <div class="col-lg-2">
+        <input type="number" class="form-control" id="nicbase" placeholder="nic mg">
+      </div>
+      <div class="col-lg-2">
+        <input type="number" class="form-control" id="nicpg" placeholder="nic pg %">
+      </div>
+      <div class="col-lg-2">
+        <input type="number" class="form-control" id="nicvg" placeholder="nic vg %">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="nictarget" class="col-lg-2 control-label">Target Nic Level</label>
+      <div class="col-lg-2">
+        <input type="number" class="form-control" id="nictarget" placeholder="target nic level">
+      </div>
+      <label for="bottlesize" class="col-lg-2 control-label">Target Amount</label>
+      <div class="col-lg-2">
+        <input type="number" class="form-control" id="bottlesize" placeholder="target ammount">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="miscadd" class="col-lg-2 control-label">Water/Alcohol/PGA</label>
+      <div class="col-lg-2">
+        <input type="number" class="form-control" id="miscadd" placeholder="target %">
+      </div>
+    </div>
+    <div class="form-group flavor">
+      <label for="flavor1" class="col-lg-2 control-label">Flavor 1</label>
+      <div class="col-lg-2">
+        <input type="text" class="form-control fname" id="flavor1" placeholder="Flavor Name">
+      </div>
+      <div class="col-lg-2">
+        <input type="number" class="form-control fpg" id="flavor1pg" placeholder="pg %">
+      </div>
+      <div class="col-lg-2">
+        <input type="number" class="form-control fvg" id="flavor1vg" placeholder="vg %">
+      </div>
+      <div class="col-lg-2">
+        <input type="number" class="form-control fpc" id="flavor1pc" placeholder="mix %">
+      </div>
+    </div>
+    <div class="form-group flavor">
+      <label for="flavor2" class="col-lg-2 control-label">Flavor 2</label>
+      <div class="col-lg-2">
+        <input type="text" class="form-control fname" id="flavor2" placeholder="Flavor Name">
+      </div>
+      <div class="col-lg-2">
+        <input type="number" class="form-control fpg" id="flavor2pg" placeholder="pg %">
+      </div>
+      <div class="col-lg-2">
+        <input type="number" class="form-control fvg" id="flavor2vg" placeholder="vg %">
+      </div>
+      <div class="col-lg-2">
+        <input type="number" class="form-control fpc" id="flavor2pc" placeholder="mix %">
+      </div>
+    </div>
+    <div class="form-group flavor">
+      <label for="flavor3" class="col-lg-2 control-label">Flavor 3</label>
+      <div class="col-lg-2">
+        <input type="text" class="form-control fname" id="flavor3" placeholder="Flavor Name">
+      </div>
+      <div class="col-lg-2">
+        <input type="number" class="form-control fpg" id="flavor3pg" placeholder="pg %">
+      </div>
+      <div class="col-lg-2">
+        <input type="number" class="form-control fvg" id="flavor3vg" placeholder="vg %">
+      </div>
+      <div class="col-lg-2">
+        <input type="number" class="form-control fpc" id="flavor3pc" placeholder="mix %">
+      </div>
+    </div>
+    <div class="form-group flavor">
+      <label for="flavor4" class="col-lg-2 control-label">Flavor 4</label>
+      <div class="col-lg-2">
+        <input type="text" class="form-control fname" id="flavor4" placeholder="Flavor Name">
+      </div>
+      <div class="col-lg-2">
+        <input type="number" class="form-control fpg" id="flavor4pg" placeholder="pg %">
+      </div>
+      <div class="col-lg-2">
+        <input type="number" class="form-control fvg" id="flavor4vg" placeholder="vg %">
+      </div>
+      <div class="col-lg-2">
+        <input type="number" class="form-control fpc" id="flavor4pc" placeholder="mix %">
+      </div>
+    </div>
+    <div class="form-group">
+      <span class="col-lg-2"></span>
+      <div class="col-lg-2">
+        <button type="button" class="btn btn-primary" id="addflavor">Add Flavor</button>
+      </div>
+    </div>
+    <div class="form-group pgvg">
+      <label for="targetpg" class="col-lg-2 control-label">Target PG</label>
+      <div class="col-lg-2">
+        <input type="number" class="form-control" id="targetpg" placeholder="pg %">
+      </div>
+      <label for="targetvg" class="col-lg-2 control-label">Target VG</label>
+      <div class="col-lg-2">
+        <input type="number" class="form-control" id="targetvg" placeholder="vg %">
+      </div>
+    </div>
+  </form>
+  <div class="spacer"></div>
+  <div class="info">
+    <div class="row">
+      <div class="col-lg-2"></div>
+      <div class="col-lg-2">
+        Ingredient
+      </div>
+      <div class="col-lg-2">
+        Ml
+      </div>
+      <div class="col-lg-2">
+        %
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-2"></div>
+      <div class="col-lg-2">
+        Nicotine
+      </div>
+      <div class="col-lg-2">
+        <span class="nicml">-</span>
+      </div>
+      <div class="col-lg-2">
+        <span class="nicpc">-</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-2"></div>
+      <div class="col-lg-2">
+        Water/Alcohol/PGA
+      </div>
+      <div class="col-lg-2">
+        <span class="miscml">-</span>
+      </div>
+      <div class="col-lg-2">
+        <span class="miscpc">-</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-2"></div>
+      <div class="col-lg-2">
+        Polypropylene Glycol
+      </div>
+      <div class="col-lg-2">
+        <span class="pg">-</span>
+      </div>
+      <div class="col-lg-2">
+        <span class="pgpc">-</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-2"></div>
+      <div class="col-lg-2">
+        Vegetable Glycol
+      </div>
+      <div class="col-lg-2">
+        <span class="vg">-</span>
+      </div>
+      <div class="col-lg-2">
+        <span class="vgpc">-</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock body %}
